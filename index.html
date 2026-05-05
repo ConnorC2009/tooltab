@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="./favicon-32x32.png">
+<title>Tool Tab</title>
+<style>
+body{background:#CCDDFF;color:#333;font-family:ABeeZee,sans-serif;text-align:center;margin:0;padding:20px}
+h1,h2,h3{text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;color:#FFEECC}
+section{margin-bottom:40px;padding:20px;border:2px solid #000;border-radius:12px;background:#FFEECC;box-shadow:4px 4px 10px rgba(0,0,0,.3)}
+input,select,button,textarea{margin:10px;padding:8px;font-size:1em;border:2px solid #000;border-radius:8px}
+button{background:#CCDDFF;cursor:pointer}
+#clock{font-size:2em;font-weight:bold}
+#todoList li{list-style:none;margin:5px 0;background:#FFF;border:2px solid #000;border-radius:8px;padding:8px;display:flex;justify-content:space-between;cursor:grab}
+textarea{width:80%;height:100px}
+#stopwatch{font-size:2em;font-weight:bold;margin:10px}
+#laps{max-width:300px;margin:auto;text-align:left}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modalBox{background:white;padding:25px;border-radius:10px;max-width:600px;text-align:left}
+p.footer{margin-top:40px;font-size:0.9em;color:#333}
+p.footer a{margin-left:10px;color:#224488;text-decoration:none}
+p.footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div id="policyModal" class="modal">
+<div class="modalBox">
+<h2>Privacy & Storage Notice</h2>
+<p>This website stores tool settings and data using your browser's local storage so they persist between sessions.</p>
+<p>All saved information remains on your device and is only readable by your own browser.</p>
+<p>If you clear your browser cookies or site data, all saved fields on this page will reset.</p>
+<p>Your location may be requested only to provide localized tools such as weather and timezone detection. Location data is <b>not stored</b>, transmitted, sold, or visible to anyone.</p>
+<p>This website has no backend database. The only server involved hosts the HTML file itself — none of your data is ever sent to it.</p>
+<button id="acceptPolicyBtn" type="button">I Understand</button>
+</div>
+</div>
+
+<h1>Tool Tab</h1>
+
+<section>
+<h2 id="greeting">Good day!</h2>
+<label>Time Zone:</label>
+<select id="timezone">
+<option value="UTC">UTC</option>
+<option value="America/New_York">New York</option>
+<option value="America/Los_Angeles">Los Angeles</option>
+<option value="Europe/London">London</option>
+<option value="Asia/Tokyo">Tokyo</option>
+</select>
+<div id="clock"></div>
+</section>
+
+<section>
+<h2>Weather</h2>
+<label>Temp Unit:</label>
+<select id="tempUnit">
+<option value="C">°C</option>
+<option value="F">°F</option>
+</select>
+<div id="weather">Loading...</div>
+</section>
+
+<section>
+<h2>Random Number Generator</h2>
+<input type="number" id="randMin" placeholder="Min" />
+<input type="number" id="randMax" placeholder="Max" />
+<button id="randBtn">Generate</button>
+<div id="randomResult"></div>
+</section>
+
+<section>
+<h2>Coin Flipper</h2>
+<button id="coinBtn">Flip</button>
+<div id="coinResult"></div>
+</section>
+
+<section>
+<h2>Magic 8-Ball</h2>
+<input type="text" id="eightBallInput" placeholder="Ask a question..." />
+<button id="eightBallBtn">Ask</button>
+<div id="eightBallResult"></div>
+</section>
+
+<section>
+<h2>Unit Converter</h2>
+<input type="number" id="unitInput" placeholder="Enter value" />
+<select id="unitFrom">
+<option value="km">Kilometers</option>
+<option value="miles">Miles</option>
+<option value="cm">Centimeters</option>
+<option value="inches">Inches</option>
+<option value="kg">Kilograms</option>
+<option value="lbs">Pounds</option>
+</select>
+ to 
+<select id="unitTo">
+<option value="km">Kilometers</option>
+<option value="miles">Miles</option>
+<option value="cm">Centimeters</option>
+<option value="inches">Inches</option>
+<option value="kg">Kilograms</option>
+<option value="lbs">Pounds</option>
+</select>
+<button id="unitBtn">Convert</button>
+<div id="unitResult"></div>
+</section>
+
+<section>
+<h2>Notes</h2>
+<textarea id="notes"></textarea>
+</section>
+
+<section>
+<h2>To-Do List</h2>
+<input id="todoInput" placeholder="New task">
+<button id="todoAddBtn">Add</button>
+<ul id="todoList"></ul>
+</section>
+
+<section>
+<h2>Stopwatch</h2>
+<div id="stopwatch">00:00:00.000</div>
+<button id="swStartBtn">Start</button>
+<button id="swStopBtn">Stop</button>
+<button id="swLapBtn">Lap</button>
+<button id="swResetBtn">Reset</button>
+<div id="laps"></div>
+
+<h3>Timer</h3>
+<input type="number" id="timerInput" placeholder="Seconds">
+<button id="timerBtn">Start Timer</button>
+<div id="timerDisplay"></div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('policyModal');
+  const acceptBtn = document.getElementById('acceptPolicyBtn');
+  acceptBtn.addEventListener('click', ()=>{localStorage.setItem('policyAccepted','true'); modal.style.display='none';});
+  if(localStorage.getItem('policyAccepted')==='true') modal.style.display='none';
+
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    const v=localStorage.getItem(el.id); if(v!==null) el.value=v;
+    el.addEventListener('input',()=>localStorage.setItem(el.id,el.value));
+    el.addEventListener('change',()=>localStorage.setItem(el.id,el.value));
+  });
+
+  const clockElem=document.getElementById('clock');
+  const greetingElem=document.getElementById('greeting');
+  const timezoneElem=document.getElementById('timezone');
+  if(!localStorage.getItem('timezone')){const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;if(tz) timezoneElem.value=tz;}
+  function updateClock(){
+    const tz=timezoneElem.value;
+    const date=new Date();
+    const opts={timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true};
+    clockElem.textContent=new Intl.DateTimeFormat('en-US',opts).format(date);
+    const h=date.getHours(); greetingElem.textContent=h<12?'Good morning!':h<18?'Good afternoon!':'Good evening!';
+  }
+  setInterval(updateClock,1000); updateClock();
+
+  async function loadWeather(){
+    if(!navigator.geolocation){document.getElementById('weather').textContent='No geolocation'; return;}
+    navigator.geolocation.getCurrentPosition(async p=>{
+      const lat=p.coords.latitude, lon=p.coords.longitude;
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+      const data=await res.json();
+      let temp=data.current_weather.temperature;
+      if(document.getElementById('tempUnit').value==='F') temp=(temp*9/5)+32;
+      document.getElementById('weather').textContent=`Temp: ${temp.toFixed(1)}° Wind: ${data.current_weather.windspeed} km/h`;
+    });
+  }
+  loadWeather();
+  document.getElementById('tempUnit').addEventListener('change', loadWeather);
+  document.getElementById('timezone').addEventListener('change', loadWeather);
+
+  document.getElementById('randBtn').addEventListener('click',()=>{
+    const min=parseInt(document.getElementById('randMin').value);
+    const max=parseInt(document.getElementById('randMax').value);
+    if(!isNaN(min)&&!isNaN(max)&&max>=min) document.getElementById('randomResult').textContent='🎲 '+(Math.floor(Math.random()*(max-min+1))+min);
+  });
+  document.getElementById('coinBtn').addEventListener('click',()=>{document.getElementById('coinResult').textContent='🪙 '+(Math.random()<0.5?'Heads':'Tails');});
+  document.getElementById('eightBallBtn').addEventListener('click',()=>{
+    const r=["Yes","No","Maybe","Ask again","Definitely","Absolutely not","It is certain","Very doubtful"];
+    document.getElementById('eightBallResult').textContent='🎱 '+r[Math.floor(Math.random()*r.length)];
+  });
+
+  // Unit converter
+  function convertUnit(){
+    const input=parseFloat(document.getElementById('unitInput').value);
+    const from=document.getElementById('unitFrom').value;
+    const to=document.getElementById('unitTo').value;
+    if(isNaN(input)) return;
+    let result;
+    if(['km','miles','cm','inches'].includes(from) && ['km','miles','cm','inches'].includes(to)){
+      let meters;
+      switch(from){case 'km':meters=input*1000;break;case 'miles':meters=input*1609.344;break;case 'cm':meters=input*0.01;break;case 'inches':meters=input*0.0254;break;}
+      switch(to){case 'km':result=meters/1000;break;case 'miles':result=meters/1609.344;break;case 'cm':result=meters/0.01;break;case 'inches':result=meters/0.0254;break;}
+    } else if(from==='kg'&&to==='lbs') result=input*2.20462;
+    else if(from==='lbs'&&to==='kg') result=input/2.20462;
+    else return;
+    document.getElementById('unitResult').textContent=`🔁 ${result.toFixed(2)} ${to}`;
+  }
+  document.getElementById('unitBtn').addEventListener('click', convertUnit);
+
+  // To-Do list
+  const todoInput=document.getElementById('todoInput');
+  const todoList=document.getElementById('todoList');
+  let draggedItem=null;
+  function saveTodos(){const items=[];document.querySelectorAll('#todoList li span').forEach(s=>items.push(s.textContent));localStorage.setItem('todos',JSON.stringify(items));}
+  function addTodo(){const v=todoInput.value.trim();if(!v)return;const li=document.createElement('li');li.draggable=true;const span=document.createElement('span');span.textContent=v;const del=document.createElement('button');del.textContent='❌';del.onclick=()=>{li.remove();saveTodos();};li.appendChild(span);li.appendChild(del);li.addEventListener('dragstart',()=>draggedItem=li);li.addEventListener('dragover',e=>e.preventDefault());li.addEventListener('drop',()=>{if(draggedItem!==li){todoList.insertBefore(draggedItem,li);saveTodos();}});todoList.appendChild(li);todoInput.value='';saveTodos();}
+  document.getElementById('todoAddBtn').addEventListener('click', addTodo);
+  JSON.parse(localStorage.getItem('todos')||'[]').forEach(t=>{todoInput.value=t;addTodo();});
+
+  // Stopwatch
+  let startTime=0,running=false,elapsed=Number(localStorage.getItem('swElapsed')||0),laps=JSON.parse(localStorage.getItem('swLaps')||'[]');
+  const stopwatch=document.getElementById('stopwatch');
+  const lapsDiv=document.getElementById('laps');
+  function format(ms){const total=Math.round(ms);const h=Math.floor(total/3600000);const m=Math.floor((total%3600000)/60000);const s=Math.floor((total%60000)/1000);const msPart=total%1000;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(msPart).padStart(3,'0')}`;}
+  function renderSW(){stopwatch.textContent=format(elapsed);}
+  function tick(){if(running){elapsed=performance.now()-startTime;renderSW();requestAnimationFrame(tick);}}
+  function startStopwatch(){if(!running){startTime=performance.now()-elapsed;running=true;tick();}}
+  function stopStopwatch(){running=false;localStorage.setItem('swElapsed',elapsed);}
+  function resetStopwatch(){running=false;elapsed=0;laps=[];localStorage.removeItem('swElapsed');localStorage.removeItem('swLaps');lapsDiv.innerHTML='';renderSW();}
+  function lapStopwatch(){laps.push(format(elapsed));localStorage.setItem('swLaps',JSON.stringify(laps));renderLaps();}
+  function renderLaps(){lapsDiv.innerHTML='';laps.forEach((l,i)=>{const d=document.createElement('div');d.textContent=`Lap ${i+1}: ${l}`;lapsDiv.appendChild(d);});}
+  renderSW();renderLaps();
+  document.getElementById('swStartBtn').addEventListener('click',startStopwatch);
+  document.getElementById('swStopBtn').addEventListener('click',stopStopwatch);
+  document.getElementById('swResetBtn').addEventListener('click',resetStopwatch);
+  document.getElementById('swLapBtn').addEventListener('click',lapStopwatch);
+
+  // Timer
+  const timerInput=document.getElementById('timerInput');
+  const timerDisplay=document.getElementById('timerDisplay');
+  document.getElementById('timerBtn').addEventListener('click',()=>{
+    let seconds=parseInt(timerInput.value);if(isNaN(seconds)||seconds<=0)return;
+    const t=setInterval(()=>{seconds--;timerDisplay.textContent=seconds+' seconds remaining';if(seconds<=0){clearInterval(t);timerDisplay.textContent="⏰ Time's up!";}},1000);
+  });
+});
+</script>
+
+<p class="footer">
+&copy; 2025-<script>document.write(new Date().getFullYear())</script> Connor Colerick
+<a href="README.html" target="_blank">📘 Need Help? Read the Documentation</a>
+</p>
+
+</body>
+</html>
